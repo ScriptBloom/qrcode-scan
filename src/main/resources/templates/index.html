@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>扫描二维码</title>
+  <!-- jquery -->
+  <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+  <!-- bootstrap -->
+  <link rel="stylesheet" type="text/css" th:href="@{/bootstrap/css/bootstrap.min.css}"/>
+  <script type="text/javascript" th:src="@{/bootstrap/js/bootstrap.min.js}"></script>
+</head>
+<body>
+  <h1>二维码</h1>
+  <div>
+    <table>
+      <tr>
+        <td><img id="qrCode" width="200" height="200"/></td>
+      </tr>
+    </table>
+  </div>
+
+</body>
+<script>
+  var img = "";
+
+  $.ajax({
+    url: "/api/createQr",
+    type:"GET",
+    success:function (data) {
+      $("#qrCode").attr("src",data.data);
+      img = data.data;
+      callbackScan($("#qrCode").attr("src"))
+    }
+  });
+  function callbackScan(img) {
+    var tID = setTimeout(function() {
+      $.ajax({
+        url : '/api/query',
+        dataType: "json",
+        type: 'GET',
+        data:{"img":img},
+        success : function(res) {
+          //process data here
+          console.log("img:"+img);
+          console.log(res.data);
+          if(res.data=="scanned") {
+            clearTimeout(tID);
+            console.log("请求确认")
+            callbackVerify(img)
+          }else {
+            callbackScan(img)
+          }
+        }
+      }) }, 1500);
+  }
+
+  function callbackVerify(img) {
+    var tID = setTimeout(function() {
+      $.ajax({
+        url : '/api/query',
+        dataType: "json",
+        type: 'GET',
+        data:{"img":img},
+        success : function(res) {
+          //process data here
+          console.log(res.data);
+          if(res.data=="verified") {
+            clearTimeout(tID);
+            console.log("确认成功")
+            window.location.href = "success";
+          }else {
+            callbackVerify(img)
+          }
+        }
+      }) }, 1500);
+  }
+
+</script>
+</html>
